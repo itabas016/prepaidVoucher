@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:tns="http://tempuri.org/" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <s:schema elementFormDefault="qualified" targetNamespace="http://tempuri.org/">
+      <s:element name="user_auth">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="accountno" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="usercode" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="password" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="user_authResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="error" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="user_auth_amt">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="accountno" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="usercode" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="password" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="amt" type="s:double" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="user_auth_amtResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="error" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="amount" type="s:float" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+    </s:schema>
+  </wsdl:types>
+  <wsdl:message name="user_authSoapIn">
+    <wsdl:part name="parameters" element="tns:user_auth" />
+  </wsdl:message>
+  <wsdl:message name="user_authSoapOut">
+    <wsdl:part name="parameters" element="tns:user_authResponse" />
+  </wsdl:message>
+  <wsdl:message name="user_auth_amtSoapIn">
+    <wsdl:part name="parameters" element="tns:user_auth_amt" />
+  </wsdl:message>
+  <wsdl:message name="user_auth_amtSoapOut">
+    <wsdl:part name="parameters" element="tns:user_auth_amtResponse" />
+  </wsdl:message>
+  <wsdl:portType name="ASC_CASH_VALIDSoap">
+    <wsdl:operation name="user_auth">
+      <wsdl:input message="tns:user_authSoapIn" />
+      <wsdl:output message="tns:user_authSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="user_auth_amt">
+      <wsdl:input message="tns:user_auth_amtSoapIn" />
+      <wsdl:output message="tns:user_auth_amtSoapOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="ASC_CASH_VALIDSoap" type="tns:ASC_CASH_VALIDSoap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="user_auth">
+      <soap:operation soapAction="http://tempuri.org/user_auth" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="user_auth_amt">
+      <soap:operation soapAction="http://tempuri.org/user_auth_amt" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="ASC_CASH_VALIDSoap12" type="tns:ASC_CASH_VALIDSoap">
+    <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="user_auth">
+      <soap12:operation soapAction="http://tempuri.org/user_auth" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="user_auth_amt">
+      <soap12:operation soapAction="http://tempuri.org/user_auth_amt" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="ASC_CASH_VALID">
+    <wsdl:port name="ASC_CASH_VALIDSoap" binding="tns:ASC_CASH_VALIDSoap">
+      <soap:address location="http://localhost/cash/ASC_CASH_VALID.asmx" />
+    </wsdl:port>
+    <wsdl:port name="ASC_CASH_VALIDSoap12" binding="tns:ASC_CASH_VALIDSoap12">
+      <soap12:address location="http://localhost/cash/ASC_CASH_VALID.asmx" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

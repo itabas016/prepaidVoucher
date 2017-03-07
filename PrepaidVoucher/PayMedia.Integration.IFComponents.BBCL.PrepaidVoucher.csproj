@@ -1,0 +1,88 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{08E3E45D-717A-4E59-BC90-F0F497BE08DC}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher</RootNamespace>
+    <AssemblyName>PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher</AssemblyName>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\Output\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\Output\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="PayMedia.ApplicationServices.Finance.ServiceContracts">
+      <HintPath>..\..\Lib\PayMedia.ApplicationServices.Finance.ServiceContracts.dll</HintPath>
+    </Reference>
+    <Reference Include="PayMedia.ApplicationServices.SharedContracts">
+      <HintPath>..\..\Lib\PayMedia.ApplicationServices.SharedContracts.dll</HintPath>
+    </Reference>
+    <Reference Include="PayMedia.Framework.Integration.Contracts">
+      <HintPath>..\..\Lib\PayMedia.Framework.Integration.Contracts.dll</HintPath>
+    </Reference>
+    <Reference Include="PayMedia.Integration.CommunicationLog.ServiceContracts">
+      <HintPath>..\..\Lib\PayMedia.Integration.CommunicationLog.ServiceContracts.dll</HintPath>
+    </Reference>
+    <Reference Include="PayMedia.Integration.FrameworkService.Interfaces">
+      <HintPath>..\..\Lib\PayMedia.Integration.FrameworkService.Interfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ConfigureSetting.cs" />
+    <Compile Include="Enums.cs" />
+    <Compile Include="IntegrationException.cs" />
+    <Compile Include="PP_01_ConsumeVoucher.cs" />
+    <Compile Include="PrepaidVoucherListner.cs" />
+    <Compile Include="PrepaidVoucherService.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SerializationUtilities.cs" />
+    <Compile Include="ServiceUtilities.cs" />
+    <Compile Include="WcfEndPoint.cs" />
+    <Compile Include="WcfListenerBase.cs" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
