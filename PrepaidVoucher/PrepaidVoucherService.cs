@@ -5,6 +5,7 @@ using System.Reflection;
 using System.ServiceModel;
 using PayMedia.Framework.Integration.Contracts;
 using PayMedia.Integration.CommunicationLog.ServiceContracts;
+using PayMedia.Integration.CommunicationLog.ServiceContracts.DataContracts;
 using PayMedia.Integration.FrameworkService.Interfaces.Common;
 
 namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
@@ -19,6 +20,8 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
     [ServiceContract(Namespace = "PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher")]
     public class PrepaidVoucherService : WcfListenerBase
     {
+        #region Fields and Ctor
+
         static long commLogSequenceId = 0;
         public IComponentInitContext _context;
         public ListenerConfiguration _configuration;
@@ -29,6 +32,8 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
             //initialize listener configuration
             //this._configuration = _context.Config[]
         }
+
+        #endregion
 
         #region WcfListenerBase overrides and implementation
         public override void Initialize(ListenerConfiguration configuration)
@@ -57,7 +62,6 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
 
         #endregion
 
-
         #region PrepaidVoucherService Members
 
         [OperationContract(IsOneWay = false)]
@@ -65,17 +69,38 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
         {
             return (this.GetPrepaidVoucherResponse(request));
         }
+
         #endregion
 
-        protected virtual void WriteCommLogEntry(string dsn, int customerId, long? historyId, string host, string messageString, CommunicationLogEntryMessageQualifier direction, string trackingId, string serialNumber)
+        #region Protected methods
+
+        protected virtual void WriteCommLogEntry(int customerId, long? historyId, string host, string messageString, CommunicationLogEntryMessageQualifier direction, string trackingId, string serialNumber)
         {
-            CommunicationLogUtilities.WriteCommLogEntry(dsn, customerId, historyId, host, messageString, direction, trackingId, serialNumber);
+            var service = ServiceUtilities.GetService<ICommunicationLogService>(_context);
+            var logEntry = new CommunicationLogEntry
+            {
+                CustomerId = customerId,
+                HistoryId = historyId,
+                Host = host,
+                Message = messageString,
+                MessageQualifier = direction,
+                MessageTrackingId = (string.IsNullOrEmpty(trackingId)) ? historyId.GetValueOrDefault().ToString() : trackingId,
+                SerialNumber = serialNumber
+
+            };
+            logEntry.TimeStamp = DateTime.Now;
+            service.CreateCommunicationLogEntry(logEntry);
         }
 
-        protected virtual void Process(ResponseCommand voucherCommand, out string output)
+        // This call is here so that our unit tests can mock up the creation of the voucher command.
+        protected virtual PP_01_ConsumeVoucher GetVoucherCommand(List<Command> commands, IntegrationMailMessage mailMessage)
         {
-            this.controller.Process(voucherCommand, out output);
+            return commands[0] as PP_01_ConsumeVoucher;
         }
+
+        #endregion
+
+        #region Private methods
 
         /// <summary>
         /// 
@@ -110,7 +135,6 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
                 baseMailMessage.CustomerId = request.prepaidVoucher.CustomerId;
 
                 WriteCommLogEntry(
-                                    baseMailMessage.Dsn,
                                     baseMailMessage.CustomerId,
                                     null,
                                     this.Name,
@@ -154,14 +178,15 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
                 }
 
                 // execute our worker and get the response.
-                Process(voucherCommand, out output);
+                voucherCommand.GetResponse(out output);
 
                 // Exception should only be thrown in a rare case. It is a System Error.
-                if (voucherCommand.isException)
+                // normal response will be ftId and return code combine with char | eg: 1234|VmsValidationSuccessful
+                if (string.IsNullOrEmpty(output) || !output.Contains("|"))
                 {
                     // Set the correct return code of the on the response.
                     response.returnCode = ReturnCode.IbsCiSystemError;
-                    IcLogger.WriteError(output, LogCategories.Communication);
+                    Diagnostics.Error(output);
                     return response;
                 }
 
@@ -191,14 +216,13 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
                 }
                 // Log the error.
                 string error = string.Format("Error in {0}.{1}() processing received message.\r\n\r\n{2}\r\n\nMessage content:\r\n{3}.", this.GetType().Name, MethodBase.GetCurrentMethod().Name, ex.ToString(), SerializationUtilities<PrepaidVoucher>.Xml.Serialize(request.prepaidVoucher));
-                //IcLogger.WriteError(error);
+                Diagnostics.Error(error);
             }
             finally
             {
                 string outputXml = SerializationUtilities<PrepaidVoucherResponse>.Xml.Serialize(response);
 
                 WriteCommLogEntry(
-                                    baseMailMessage.Dsn,
                                     baseMailMessage.CustomerId,
                                     null,
                                     this.Name,
@@ -211,11 +235,9 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
             return response;
         }
 
-        // This call is here so that our unit tests can mock up the creation of the voucher command.
-        protected virtual PP_01_ConsumeVoucher GetVoucherCommand(List<Command> commands, IntegrationMailMessage mailMessage)
-        {
-            return commands[0] as PP_01_ConsumeVoucher;
-        }
+        #endregion
+
+        #region Service Model
 
         [System.ServiceModel.MessageContractAttribute(IsWrapped = false)]
         public partial class PrepaidVoucherRequest
@@ -325,5 +347,6 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
             }
         }
 
-    }// end class PrepaidVoucherService
-}// end namespace
+        #endregion
+    }
+}

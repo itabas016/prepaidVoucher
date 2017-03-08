@@ -52,10 +52,16 @@
     <Reference Include="PayMedia.Integration.FrameworkService.Interfaces">
       <HintPath>..\..\Lib\PayMedia.Integration.FrameworkService.Interfaces.dll</HintPath>
     </Reference>
+    <Reference Include="PayMedia.Logging">
+      <HintPath>..\..\Lib\PayMedia.Logging.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.EnterpriseServices" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Web.Services" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -64,19 +70,66 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Command.cs" />
     <Compile Include="ConfigureSetting.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="IntegrationException.cs" />
+    <Compile Include="ListenerConfiguration.cs" />
     <Compile Include="PP_01_ConsumeVoucher.cs" />
-    <Compile Include="PrepaidVoucherListner.cs" />
+    <Compile Include="PrepaidVoucherListener.cs" />
     <Compile Include="PrepaidVoucherService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
     <Compile Include="SerializationUtilities.cs" />
     <Compile Include="ServiceUtilities.cs" />
     <Compile Include="WcfEndPoint.cs" />
     <Compile Include="WcfListenerBase.cs" />
+    <Compile Include="Web References\AscCashValid\IASC_CASH_VALID.cs" />
+    <Compile Include="Web References\AscCashValid\Reference.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Reference.map</DependentUpon>
+    </Compile>
+    <Compile Include="XmlUtilities.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="app.config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <None Include="Web References\AscCashValid\ASC_CASH_VALID.wsdl" />
+    <None Include="Web References\AscCashValid\Reference.map">
+      <Generator>MSDiscoCodeGenerator</Generator>
+      <LastGenOutput>Reference.cs</LastGenOutput>
+    </None>
+    <None Include="WSDL\ASC_CASH_VALID.wsdl" />
+  </ItemGroup>
+  <ItemGroup>
+    <WebReferences Include="Web References\" />
+  </ItemGroup>
+  <ItemGroup>
+    <WebReferenceUrl Include="D:\tfs-w2k08\Professional_Services\Clients\BBCL\PrepaidVoucher\Trunk\Source\PrepaidVoucher\WSDL\ASC_CASH_VALID.wsdl">
+      <UrlBehavior>Dynamic</UrlBehavior>
+      <RelPath>Web References\AscCashValid\</RelPath>
+      <UpdateFromURL>D:\tfs-w2k08\Professional_Services\Clients\BBCL\PrepaidVoucher\Trunk\Source\PrepaidVoucher\WSDL\ASC_CASH_VALID.wsdl</UpdateFromURL>
+      <ServiceLocationURL>
+      </ServiceLocationURL>
+      <CachedDynamicPropName>
+      </CachedDynamicPropName>
+      <CachedAppSettingsObjectName>Settings</CachedAppSettingsObjectName>
+      <CachedSettingsPropName>PayMedia_Integration_IFComponents_BBCL_PrepaidVoucher_AscCashValid_ASC_CASH_VALID</CachedSettingsPropName>
+    </WebReferenceUrl>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Diagnostics.cs" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
