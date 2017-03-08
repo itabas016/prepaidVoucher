@@ -21,10 +21,13 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
 
                 _service.Start();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                
-                throw;
+                if (_service != null)
+                {
+                    _service.ForceStop();
+                }
+                Diagnostics.Error(ex.Message);
             }
 
         }
