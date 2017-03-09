@@ -175,7 +175,7 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
         {
             float floatAmount = 0;
 
-            using (IASC_CASH_VALID vmsWS = new ASC_CASH_VALID())
+            using (IASC_CASH_VALID vmsWS = GetVMSAscCashValidService())
             {
                 vmsWS.Url = _setting.VmsWSUrl;
                 /* This parameter Amount is 0 for now. Per Jordi/Sergio this paramater is not used in current implementation. */
@@ -184,6 +184,16 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
 
                 return vmsResponseString;
             }
+        }
+
+        protected virtual IASC_CASH_VALID GetVMSAscCashValidService()
+        {
+            return new ASC_CASH_VALID();
+        }
+
+        protected virtual IFinanceService GetFinanceService()
+        {
+            return ServiceUtilities.GetService<IFinanceService>(_context);
         }
 
         private FinancialTransaction CreatePrepayFinancialTransaction()
@@ -199,7 +209,7 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
 
             transactionsCollection.Add(transaction);
 
-            IFinanceService financeService = ServiceUtilities.GetService<IFinanceService>(_context);
+            IFinanceService financeService = GetFinanceService();
             transactionsCollection = financeService.CreatePaymentTransactions(transactionsCollection, PaymentReceiptNumberingMethod.Automatic);
             if (transactionsCollection.Items.Any())
                 return transactionsCollection.Items[0];

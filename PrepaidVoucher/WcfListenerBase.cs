@@ -42,6 +42,7 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
             // Start up the service host.
             serviceHost = ServiceUtilities.CreateServiceHost(endpoint, contract);
             serviceHost.Open();
+            Diagnostics.Info(string.Format("{0} host is starting up.", endpoint.Name));
         }
 
         /// <summary>

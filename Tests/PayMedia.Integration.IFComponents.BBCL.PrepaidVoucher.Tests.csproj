@@ -48,6 +48,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\Lib\PayMedia.Framework.Integration.Contracts.dll</HintPath>
     </Reference>
+    <Reference Include="PayMedia.Integration.CommunicationLog.ServiceContracts, Version=62.24.0.0, Culture=neutral, PublicKeyToken=c8d07e2301cbe008, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Lib\PayMedia.Integration.CommunicationLog.ServiceContracts.dll</HintPath>
+    </Reference>
     <Reference Include="PayMedia.Integration.FrameworkService.Interfaces, Version=62.24.0.0, Culture=neutral, PublicKeyToken=c8d07e2301cbe008, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\Lib\PayMedia.Integration.FrameworkService.Interfaces.dll</HintPath>
@@ -73,6 +77,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="settings.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

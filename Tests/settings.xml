@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<TestMessages>
+  <MessageGroup name="PrepaidVoucher">
+    <Message name="PP_01_ConsumeVoucher">
+      <MessageContent>
+        <CustomContent>
+          <Settings>
+            <CustomerId>131</CustomerId>
+            <FinancialAccountId>961</FinancialAccountId>
+            <VoucherTicketNumber>123456</VoucherTicketNumber>
+            <ASMPassword>entriqeng</ASMPassword>
+            <ASMUsername>entriqeng</ASMUsername>
+            <ASMDsn>baseline</ASMDsn>
+          </Settings>
+        </CustomContent>
+      </MessageContent>
+    </Message>
+    <Message name="RealFTTest">
+      <MessageContent>
+        <CustomContent>
+          <Settings>
+            <CustomerId>39023929</CustomerId>
+            <FinancialAccountId>3877924</FinancialAccountId>
+            <BaseAmount>123.45</BaseAmount>
+            <LedgerAccountId>11</LedgerAccountId>
+            <CurrencyId>1</CurrencyId>
+            <PaymentReferenceNumber>VOUCHER123</PaymentReferenceNumber>
+            <ASMDsn>baseline</ASMDsn>
+          </Settings>
+        </CustomContent>
+      </MessageContent>
+    </Message>
+  </MessageGroup>
+</TestMessages>
