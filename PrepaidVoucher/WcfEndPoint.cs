@@ -16,7 +16,5 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
         public string Binding;
         public string Contract;
         public string BindingConfiguration;
-        public string WorkerConditionName;
-        public string WorkerConditionValue;
     }
 }

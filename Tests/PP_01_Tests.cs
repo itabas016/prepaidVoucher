@@ -12,6 +12,7 @@ using PayMedia.ApplicationServices.Finance.ServiceContracts;
 using PayMedia.ApplicationServices.Finance.ServiceContracts.DataContracts;
 using PayMedia.Framework.Integration.Contracts;
 using PayMedia.Integration.CommunicationLog.ServiceContracts;
+using PayMedia.Integration.FrameworkService.Common;
 using PayMedia.Integration.FrameworkService.Interfaces.Common;
 using PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher.AscCashValid;
 
@@ -28,6 +29,19 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher.Tests
         {
             _mockery = new Mockery();
             _context = _mockery.NewMock<IComponentInitContext>();
+            var config = PropertySet.Create();
+            config["endpoint_name"] = "PrepaidVoucherInBound";
+            config["endpoint_port"] = "8083";
+            Stub.On(_context).GetProperty("Config").Will(Return.Value(config));
+            _configuration = new ListenerConfiguration();
+            _configuration.Endpoint = new WcfEndpoint()
+            {
+                Name = "PrepaidVoucherInBound",
+                Address = string.Format("http://localhost:{0}/ibs.interprit.com/{1}", 8083, "PrepaidVoucherInBound"),
+                Binding = "basicHttpBinding",
+                Contract = "PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher",
+                BindingConfiguration = "nonCertBinding"
+            };
         }
 
         [Test]
@@ -49,15 +63,13 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher.Tests
             voucher.CustomerId = customerID;
             voucher.VoucherTicketNumber = voucherTicketNumber;
 
-            /*
             PrepaidVoucherService.AuthenticationHeader header = new PrepaidVoucherService.AuthenticationHeader();
             header.Password = asmPassword;
             header.Username = asmUsername;
             header.Dsn = asmDsn;
-            */
 
             PrepaidVoucherService.PrepaidVoucherRequest request =
-                new PrepaidVoucherService.PrepaidVoucherRequest(voucher);
+                new PrepaidVoucherService.PrepaidVoucherRequest(voucher, header);
 
             PrepaidVoucherServiceMock service = new PrepaidVoucherServiceMock(_context);
             PrepaidVoucherService.PrepaidVoucherResponse response = service.ConsumeVoucher(request);
@@ -79,11 +91,12 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher.Tests
             voucher.VoucherTicketNumber = 123456;
 
             PrepaidVoucherService.PrepaidVoucherRequest request =
-                new PrepaidVoucherService.PrepaidVoucherRequest(voucher);
+                new PrepaidVoucherService.PrepaidVoucherRequest(voucher, null);
 
-            List<ListenerConfiguration> listenerConfigurations = new List<ListenerConfiguration>();
+            var config = new ListenerConfiguration();
+            config.Endpoint = new WcfEndpoint();
             PrepaidVoucherService service = new PrepaidVoucherService(_context);
-            service.Initialize(listenerConfigurations.Find(x => x.Endpoint.Name == "InboundPrepaidVoucherListener"));
+            service.Initialize(_configuration);
             PrepaidVoucherService.PrepaidVoucherResponse response = service.ConsumeVoucher(request);
 
             Console.WriteLine("Return code: {0}", response.returnCode.ToString());
@@ -100,19 +113,16 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher.Tests
             voucher.CustomerId = 456;
             voucher.VoucherTicketNumber = 123456;
 
-            /*
             PrepaidVoucherService.AuthenticationHeader header = new PrepaidVoucherService.AuthenticationHeader();
             header.Password = "entriqeng";
             header.Username = "entriqeng";
             header.Dsn = "UnitTest";
-            */
 
             PrepaidVoucherService.PrepaidVoucherRequest request =
-                new PrepaidVoucherService.PrepaidVoucherRequest(voucher);
+                new PrepaidVoucherService.PrepaidVoucherRequest(voucher, header);
 
-            List<ListenerConfiguration> listenerConfigurations = new List<ListenerConfiguration>();
             PrepaidVoucherServiceExceptionMock service = new PrepaidVoucherServiceExceptionMock(_context);
-            service.Initialize(listenerConfigurations.Find(x => x.Endpoint.Name == "InboundPrepaidVoucherListener"));
+            service.Initialize(_configuration);
 
             //PrepaidVoucherServiceExceptionMock service = new PrepaidVoucherServiceExceptionMock();
             service.exceptionText = "A custom error occurred.  This is the error text.";
@@ -243,7 +253,7 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher.Tests
             {
                 //ignore commlog in unittest
             }
-            
+
             protected override PP_01_ConsumeVoucher GetVoucherCommand(List<Command> commands, IntegrationMailMessage mailMessage)
             {
                 pp_01 = new PP_01_Mock(_context);

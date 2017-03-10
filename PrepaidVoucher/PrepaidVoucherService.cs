@@ -25,12 +25,15 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
         static long commLogSequenceId = 0;
         public IComponentInitContext _context;
         public ListenerConfiguration _configuration;
+        private int port;
 
         public PrepaidVoucherService(IComponentInitContext initContext)
         {
             this._context = initContext;
             //initialize listener configuration
-            //this._configuration = _context.Config[]
+            this._configuration = new ListenerConfiguration();
+            Int32.TryParse(_context.Config["endpoint_port"], out port);
+            _configuration.Endpoint = CreateWcfEndpoint(_context.Config["endpoint_name"], port);
         }
 
         #endregion
@@ -235,6 +238,18 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
             return response;
         }
 
+        private WcfEndpoint CreateWcfEndpoint(string name, int port)
+        {
+            var wcfEndpoint = new WcfEndpoint();
+
+            wcfEndpoint.Name = name;
+            wcfEndpoint.Address = string.Format("http://localhost:{0}/ibs.interprit.com/{1}", port, name);
+            wcfEndpoint.Binding = "basicHttpBinding";
+            wcfEndpoint.Contract = "PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher";
+            wcfEndpoint.BindingConfiguration = "nonCertBinding";
+            return wcfEndpoint;
+        }
+
         #endregion
 
         #region Service Model
@@ -243,14 +258,18 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
         public partial class PrepaidVoucherRequest
         {
             [System.ServiceModel.MessageBodyMemberAttribute(Namespace = "http://www.ibsinterprit.com/integration/prepaidvoucher", Order = 0)]
+            public PrepaidVoucherService.AuthenticationHeader header;
+
+            [System.ServiceModel.MessageBodyMemberAttribute(Namespace = "http://www.ibsinterprit.com/integration/prepaidvoucher", Order = 1)]
             public PrepaidVoucherService.PrepaidVoucher prepaidVoucher;
 
             public PrepaidVoucherRequest()
             {
             }
 
-            public PrepaidVoucherRequest(PrepaidVoucher prepaidVoucher)
+            public PrepaidVoucherRequest(PrepaidVoucher prepaidVoucher, AuthenticationHeader header)
             {
+                this.header = header;
                 this.prepaidVoucher = prepaidVoucher;
             }
         }
@@ -343,6 +362,55 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
                 set
                 {
                     this.voucherAmount = value;
+                }
+            }
+        }
+
+        [System.SerializableAttribute()]
+        [System.Xml.Serialization.XmlTypeAttribute(AnonymousType = true, Namespace = "http://www.ibsinterprit.com/integration/prepaidvoucher")]
+        public partial class AuthenticationHeader
+        {
+            private string dsn;
+
+            private string username;
+
+            private string password;
+
+            [System.Xml.Serialization.XmlElementAttribute("Username", Order = 0)]
+            public string Username
+            {
+                get
+                {
+                    return this.username;
+                }
+                set
+                {
+                    this.username = value;
+                }
+            }
+            [System.Xml.Serialization.XmlElementAttribute("Password", Order = 1)]
+            public string Password
+            {
+                get
+                {
+                    return this.password;
+                }
+                set
+                {
+                    this.password = value;
+                }
+            }
+            /// <remarks/>
+            [System.Xml.Serialization.XmlElementAttribute("Dsn", Order = 2)]
+            public string Dsn
+            {
+                get
+                {
+                    return this.dsn;
+                }
+                set
+                {
+                    this.dsn = value;
                 }
             }
         }
