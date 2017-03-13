@@ -36,6 +36,10 @@
     <Reference Include="nunit.framework">
       <HintPath>..\..\Lib\nunit.framework.dll</HintPath>
     </Reference>
+    <Reference Include="PayMedia.ApplicationServices.Authentication.ServiceContracts, Version=62.24.0.0, Culture=neutral, PublicKeyToken=c8d07e2301cbe008, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Lib\PayMedia.ApplicationServices.Authentication.ServiceContracts.dll</HintPath>
+    </Reference>
     <Reference Include="PayMedia.ApplicationServices.Finance.ServiceContracts, Version=62.24.0.0, Culture=neutral, PublicKeyToken=c8d07e2301cbe008, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\Lib\PayMedia.ApplicationServices.Finance.ServiceContracts.dll</HintPath>
@@ -69,6 +73,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\CommonAssemblyInfo.cs">
+      <Link>Properties\CommonAssemblyInfo.cs</Link>
+    </Compile>
     <Compile Include="PP_01_Tests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

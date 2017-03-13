@@ -37,6 +37,10 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="PayMedia.ApplicationServices.Authentication.ServiceContracts, Version=62.24.0.0, Culture=neutral, PublicKeyToken=c8d07e2301cbe008, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Lib\PayMedia.ApplicationServices.Authentication.ServiceContracts.dll</HintPath>
+    </Reference>
     <Reference Include="PayMedia.ApplicationServices.Finance.ServiceContracts">
       <HintPath>..\..\Lib\PayMedia.ApplicationServices.Finance.ServiceContracts.dll</HintPath>
     </Reference>
@@ -70,11 +74,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Command.cs" />
+    <Compile Include="..\CommonAssemblyInfo.cs">
+      <Link>Properties\CommonAssemblyInfo.cs</Link>
+    </Compile>
     <Compile Include="ConfigureSetting.cs" />
+    <Compile Include="ConsumeVoucherData.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="IntegrationException.cs" />
-    <Compile Include="ListenerConfiguration.cs" />
+    <Compile Include="IListener.cs" />
+    <Compile Include="IPrepaidVoucherService.cs" />
     <Compile Include="PP_01_ConsumeVoucher.cs" />
     <Compile Include="PrepaidVoucherListener.cs" />
     <Compile Include="PrepaidVoucherService.cs" />

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.ServiceModel;
+using PayMedia.ApplicationServices.Authentication.ServiceContracts;
+using PayMedia.ApplicationServices.Authentication.ServiceContracts.DataContracts;
 using PayMedia.Framework.Integration.Contracts;
 using PayMedia.Integration.CommunicationLog.ServiceContracts;
 using PayMedia.Integration.CommunicationLog.ServiceContracts.DataContracts;
@@ -15,59 +17,48 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
     /// The PrepaidVoucher Web Service handles PrepaidVoucher Related Calls and forwards
     /// them along to the configured commands.
     /// It is a singleton service that will return a response when called based on its contract.
-	/// </summary>
-	[ServiceBehavior(InstanceContextMode = InstanceContextMode.Single, ConcurrencyMode = ConcurrencyMode.Multiple, UseSynchronizationContext = false)]
+    /// </summary>
+    [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single, ConcurrencyMode = ConcurrencyMode.Multiple,
+         UseSynchronizationContext = false)]
     [ServiceContract(Namespace = "PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher")]
-    public class PrepaidVoucherService : WcfListenerBase
+    public class PrepaidVoucherService : WcfListenerBase, IPrepaidVoucherService
     {
         #region Fields and Ctor
 
-        static long commLogSequenceId = 0;
-        public IComponentInitContext _context;
-        public ListenerConfiguration _configuration;
+        public IComponentInitContext context;
+        public WcfEndpoint wcfEndpoint;
         private int port;
+        private static long commLogSequenceId = 0;
 
         public PrepaidVoucherService(IComponentInitContext initContext)
         {
-            this._context = initContext;
-            //initialize listener configuration
-            this._configuration = new ListenerConfiguration();
-            Int32.TryParse(_context.Config["endpoint_port"], out port);
-            _configuration.Endpoint = CreateWcfEndpoint(_context.Config["endpoint_name"], port);
+            this.context = initContext;
+
+            Int32.TryParse(context.Config["endpoint_port"], out port);
+            wcfEndpoint = CreateWcfEndpoint(context.Config["endpoint_name"], port);
         }
 
         #endregion
 
-        #region WcfListenerBase overrides and implementation
-        public override void Initialize(ListenerConfiguration configuration)
-        {
-            try
-            {
-                base.Initialize(configuration);
-
-                //construct command
-
-            }
-            catch (Exception ex)
-            {
-                string error = string.Format("Error occured in {0}.{1}()", this.GetType().Name, MethodBase.GetCurrentMethod().Name);
-                throw new IntegrationException(error, ex);
-            }
-        }
+        #region overrides and implementation
 
         /// <summary>
         /// Starts listening.
         /// </summary>
         public override void Start()
         {
-            base.RequestStart(this);
+            try
+            {
+                base.RequestStart(this);
+            }
+            catch (Exception ex)
+            {
+                string error = string.Format("Error occured in {0}.{1}()", this.GetType().Name,
+                    MethodBase.GetCurrentMethod().Name);
+                throw new IntegrationException(error, ex);
+            }
         }
 
-        #endregion
-
-        #region PrepaidVoucherService Members
-
-        [OperationContract(IsOneWay = false)]
         public PrepaidVoucherResponse ConsumeVoucher(PrepaidVoucherRequest request)
         {
             return (this.GetPrepaidVoucherResponse(request));
@@ -77,9 +68,10 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
 
         #region Protected methods
 
-        protected virtual void WriteCommLogEntry(int customerId, long? historyId, string host, string messageString, CommunicationLogEntryMessageQualifier direction, string trackingId, string serialNumber)
+        protected virtual void WriteCommLogEntry(int customerId, long? historyId, string host, string messageString,
+            CommunicationLogEntryMessageQualifier direction, string trackingId, string serialNumber)
         {
-            var service = ServiceUtilities.GetService<ICommunicationLogService>(_context);
+            var service = ServiceUtilities.GetService<ICommunicationLogService>(context);
             var logEntry = new CommunicationLogEntry
             {
                 CustomerId = customerId,
@@ -87,7 +79,8 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
                 Host = host,
                 Message = messageString,
                 MessageQualifier = direction,
-                MessageTrackingId = (string.IsNullOrEmpty(trackingId)) ? historyId.GetValueOrDefault().ToString() : trackingId,
+                MessageTrackingId =
+                    (string.IsNullOrEmpty(trackingId)) ? historyId.GetValueOrDefault().ToString() : trackingId,
                 SerialNumber = serialNumber
 
             };
@@ -96,9 +89,15 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
         }
 
         // This call is here so that our unit tests can mock up the creation of the voucher command.
-        protected virtual PP_01_ConsumeVoucher GetVoucherCommand(List<Command> commands, IntegrationMailMessage mailMessage)
+        protected virtual PP_01_ConsumeVoucher CreateVoucherCommand(IComponentInitContext context,
+            ConsumeVoucherData data)
         {
-            return commands[0] as PP_01_ConsumeVoucher;
+            return new PP_01_ConsumeVoucher(context, data);
+        }
+
+        protected virtual IAuthenticationService GetAuthenticationService()
+        {
+            return ServiceUtilities.GetService<IAuthenticationService>(context);
         }
 
         #endregion
@@ -112,17 +111,28 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
         /// <returns>PrepaidVoucherResponse</returns>
         private PrepaidVoucherResponse GetPrepaidVoucherResponse(PrepaidVoucherRequest request)
         {
-            IntegrationMailMessage baseMailMessage = new IntegrationMailMessage();
-            string inputXml = string.Empty;
             string output = string.Empty;
-
             bool knownException = false;
+
+            // Initilize consume voucher.
+            var consumeVoucherData = new ConsumeVoucherData(request);
+
             // Create the response object.
             PrepaidVoucherResponse response = new PrepaidVoucherResponse();
 
-            ReturnCode returnCode;
             try
             {
+                // Get the Authentication Header.
+                if (request.header == null)
+                {
+                    // Set the correct return code of the on the response.
+                    response.returnCode = ReturnCode.IbsCiUnauthorized;
+                    knownException = true;
+                    throw new IntegrationException("No Authentication Header was Provided.\r\n");
+                }
+
+                AuthenticationHeader authHeader = request.header;
+
                 // Set the voucher to use in the response as the original request voucher.
                 response.prepaidVoucher = request.prepaidVoucher;
 
@@ -130,55 +140,56 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
                 // Per IDD, On error: The Web Method returns zero ("0") for "amount" and one of four possible codes for error: 
                 response.prepaidVoucher.VoucherAmount = 0;
 
-                // Serialize the Prepaid Voucher to pass to the worrker.
-                inputXml = SerializationUtilities<PrepaidVoucher>.Xml.Serialize(request.prepaidVoucher);
+                if (string.IsNullOrEmpty(authHeader.Dsn))
+                {
+                    // Set the correct return code of the on the response.
+                    response.returnCode = ReturnCode.IbsCiUnauthorized;
+                    knownException = true;
+                    throw new IntegrationException("Authentication credentials are invalid. No Dsn was provided.\r\n");
+                }
 
-                baseMailMessage.UseCase = "IntegrationEventId";
-                //baseMailMessage.Dsn = authHeader.Dsn;
-                baseMailMessage.CustomerId = request.prepaidVoucher.CustomerId;
+                try
+                {
+                    var authService = GetAuthenticationService();
+                    var result = authService.AuthenticateByProof(new UserIdentity
+                    {
+                        UserName = authHeader.Username,
+                        Dsns = new DsnCollection { new Dsn { Name = authHeader.Dsn } }
+                    }, authHeader.Password, string.Empty);
+
+                    if (result == null || !result.Authenticated.Value)
+                    {
+                        response.returnCode = ReturnCode.IbsCiUnauthorized;
+                        knownException = true;
+                        throw new IntegrationException("Authentication credentials are invalid. No Dsn was provided.\r\n");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Set the correct return code of the on the response.
+                    response.returnCode = ReturnCode.IbsCiUnauthorized;
+
+                    knownException = true;
+
+                    // Just throw the exception.
+                    throw ex;
+                }
+
+                // Serialize the Prepaid Voucher to pass to the worrker.
+                var inputXml = SerializationUtilities<PrepaidVoucher>.Xml.Serialize(request.prepaidVoucher);
 
                 WriteCommLogEntry(
-                                    baseMailMessage.CustomerId,
+                                    consumeVoucherData.CustomerId,
                                     null,
                                     this.Name,
                                     inputXml,
                                     CommunicationLogEntryMessageQualifier.Receive,
                                     System.Threading.Interlocked.Increment(ref commLogSequenceId).ToString(),
-                                    request.prepaidVoucher.VoucherTicketNumber.ToString()
+                                    consumeVoucherData.VoucherTicketNumber.ToString()
                                     );
 
-                //Value for UseCaseData will be hardcoded and is the only code that needs to change if 
-                // a different worker is to be used to handle this message.
-                baseMailMessage.UseCaseData = "-100";
-                baseMailMessage.XmlDoc = inputXml;
-
-                //CommandFactory commandFactory = new CommandFactory();
-                //List<Command> commands = commandFactory.CreateCommands(baseMailMessage, listenerName);
-
-                var commands = new List<Command>();
-
-                // Ensure that we only only ever get one command!
-                if (commands.Count != 1)
-                {
-                    // Set the correct return code of the on the response.
-                    response.returnCode = ReturnCode.IbsCiSystemError;
-
-                    knownException = true;
-
-                    throw new IntegrationException(string.Format("There MUST be one listener defined for Event {0}. The Command Count is {1}.\r\n", baseMailMessage.UseCaseData, commands.Count));
-                }
-
                 // ensure that the command that we did get is the type we expected.
-                PP_01_ConsumeVoucher voucherCommand = GetVoucherCommand(commands, baseMailMessage);
-                if (voucherCommand == null)
-                {
-                    // Set the correct return code of the on the response.
-                    response.returnCode = ReturnCode.IbsCiSystemError;
-
-                    knownException = true;
-
-                    throw new IntegrationException(string.Format("The listener defined for Event {0} MUST be of type {1} . The listener configured is {2}.\r\n", baseMailMessage.UseCaseData, typeof(PP_01_ConsumeVoucher).Name, commands[0].GetType().Name));
-                }
+                PP_01_ConsumeVoucher voucherCommand = CreateVoucherCommand(context, consumeVoucherData);
 
                 // execute our worker and get the response.
                 voucherCommand.GetResponse(out output);
@@ -202,7 +213,7 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
                 }
 
                 // Obtain the enum value from the response code returned from the response command.
-                returnCode = (ReturnCode)Enum.Parse(typeof(ReturnCode), output);
+                var returnCode = (ReturnCode)Enum.Parse(typeof(ReturnCode), output);
 
                 // Set the voucher amount on the Response voucher from the worker.
                 response.prepaidVoucher.VoucherAmount = voucherCommand.VoucherAmount;
@@ -226,13 +237,13 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
                 string outputXml = SerializationUtilities<PrepaidVoucherResponse>.Xml.Serialize(response);
 
                 WriteCommLogEntry(
-                                    baseMailMessage.CustomerId,
+                                    consumeVoucherData.CustomerId,
                                     null,
                                     this.Name,
                                     outputXml,
                                     CommunicationLogEntryMessageQualifier.Send,
                                     System.Threading.Interlocked.Increment(ref commLogSequenceId).ToString(),
-                                    request.prepaidVoucher.VoucherTicketNumber.ToString());
+                                    consumeVoucherData.VoucherTicketNumber.ToString());
             }
 
             return response;

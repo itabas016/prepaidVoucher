@@ -17,8 +17,6 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
             {
                 _service = new PrepaidVoucherService(initContext);
 
-                _service.Initialize(_service._configuration);
-
                 _service.Start();
             }
             catch (Exception ex)
@@ -29,7 +27,6 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
                 }
                 Diagnostics.Error(ex.Message);
             }
-
         }
 
         ~PrepaidVoucherListener()

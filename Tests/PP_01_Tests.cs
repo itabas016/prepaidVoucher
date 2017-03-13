@@ -8,6 +8,8 @@ using System.Xml;
 using NMock2;
 using NMock2.Actions;
 using NUnit.Framework;
+using PayMedia.ApplicationServices.Authentication.ServiceContracts;
+using PayMedia.ApplicationServices.Authentication.ServiceContracts.DataContracts;
 using PayMedia.ApplicationServices.Finance.ServiceContracts;
 using PayMedia.ApplicationServices.Finance.ServiceContracts.DataContracts;
 using PayMedia.Framework.Integration.Contracts;
@@ -22,35 +24,31 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher.Tests
     public class PP_01_Tests
     {
         public IComponentInitContext _context;
-        public ListenerConfiguration _configuration;
         public Mockery _mockery;
 
-        public PP_01_Tests()
+        [SetUp]
+        public void Initialize()
         {
             _mockery = new Mockery();
             _context = _mockery.NewMock<IComponentInitContext>();
-            var config = PropertySet.Create();
+            IPropertySet config = PropertySet.Create();
             config["endpoint_name"] = "PrepaidVoucherInBound";
             config["endpoint_port"] = "8083";
-            Stub.On(_context).GetProperty("Config").Will(Return.Value(config));
-            _configuration = new ListenerConfiguration();
-            _configuration.Endpoint = new WcfEndpoint()
-            {
-                Name = "PrepaidVoucherInBound",
-                Address = string.Format("http://localhost:{0}/ibs.interprit.com/{1}", 8083, "PrepaidVoucherInBound"),
-                Binding = "basicHttpBinding",
-                Contract = "PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher",
-                BindingConfiguration = "nonCertBinding"
-            };
+            Expect.AtLeastOnce.On(_context).GetProperty("Config").Will(Return.Value(config));
+        }
+
+        [TearDown]
+        public void Clear()
+        {
+            _mockery = null;
+            _context = null;
         }
 
         [Test]
         [Category("MockTests")]
         public void PP_01_Mock_Success()
         {
-            XmlNode settings =
-                GetNode(
-                    "TestMessages/MessageGroup[@name='PrepaidVoucher']/Message[@name='PP_01_ConsumeVoucher']/MessageContent/CustomContent/Settings");
+            XmlNode settings =GetNode("TestMessages/MessageGroup[@name='PrepaidVoucher']/Message[@name='PP_01_ConsumeVoucher']/MessageContent/CustomContent/Settings");
             int customerID = Int32.Parse(XmlUtilities.SafeSelectText(settings, "CustomerId"));
             int financialAccountId = Int32.Parse(XmlUtilities.SafeSelectText(settings, "FinancialAccountId"));
             long voucherTicketNumber = long.Parse(XmlUtilities.SafeSelectText(settings, "VoucherTicketNumber"));
@@ -60,6 +58,7 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher.Tests
 
             PrepaidVoucherService.PrepaidVoucher voucher = new PrepaidVoucherService.PrepaidVoucher();
             voucher.FinancialAccountId = financialAccountId;
+
             voucher.CustomerId = customerID;
             voucher.VoucherTicketNumber = voucherTicketNumber;
 
@@ -68,17 +67,14 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher.Tests
             header.Username = asmUsername;
             header.Dsn = asmDsn;
 
-            PrepaidVoucherService.PrepaidVoucherRequest request =
-                new PrepaidVoucherService.PrepaidVoucherRequest(voucher, header);
+            PrepaidVoucherService.PrepaidVoucherRequest request = new PrepaidVoucherService.PrepaidVoucherRequest(voucher, header);
 
             PrepaidVoucherServiceMock service = new PrepaidVoucherServiceMock(_context);
             PrepaidVoucherService.PrepaidVoucherResponse response = service.ConsumeVoucher(request);
             service.VerifyExpectations();
 
-            Console.WriteLine("Return code: {0}; Voucher Amount: {1}; FT ID: {2}", response.returnCode,
-                response.prepaidVoucher.VoucherAmount, response.financialTransactionId);
-            Assert.AreEqual(ReturnCode.VmsValidationSuccessful, response.returnCode,
-                "Return code was not successful from web service call.");
+            Console.WriteLine("Return code: {0}; Voucher Amount: {1}; FT ID: {2}", response.returnCode, response.prepaidVoucher.VoucherAmount, response.financialTransactionId);
+            Assert.AreEqual(ReturnCode.VmsValidationSuccessful, response.returnCode, "Return code was not successful from web service call.");
         }
 
         [Test]
@@ -90,18 +86,13 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher.Tests
             voucher.CustomerId = 456;
             voucher.VoucherTicketNumber = 123456;
 
-            PrepaidVoucherService.PrepaidVoucherRequest request =
-                new PrepaidVoucherService.PrepaidVoucherRequest(voucher, null);
+            PrepaidVoucherService.PrepaidVoucherRequest request = new PrepaidVoucherService.PrepaidVoucherRequest(voucher, null);
 
-            var config = new ListenerConfiguration();
-            config.Endpoint = new WcfEndpoint();
             PrepaidVoucherService service = new PrepaidVoucherService(_context);
-            service.Initialize(_configuration);
             PrepaidVoucherService.PrepaidVoucherResponse response = service.ConsumeVoucher(request);
 
             Console.WriteLine("Return code: {0}", response.returnCode.ToString());
-            Assert.AreEqual(ReturnCode.IbsCiUnauthorized, response.returnCode,
-                "Return code was not unauthorized from web service call.");
+            Assert.AreEqual(ReturnCode.IbsCiUnauthorized, response.returnCode, "Return code was not unauthorized from web service call.");
         }
 
         [Test]
@@ -118,24 +109,19 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher.Tests
             header.Username = "entriqeng";
             header.Dsn = "UnitTest";
 
-            PrepaidVoucherService.PrepaidVoucherRequest request =
-                new PrepaidVoucherService.PrepaidVoucherRequest(voucher, header);
+            PrepaidVoucherService.PrepaidVoucherRequest request = new PrepaidVoucherService.PrepaidVoucherRequest(voucher, header);
 
             PrepaidVoucherServiceExceptionMock service = new PrepaidVoucherServiceExceptionMock(_context);
-            service.Initialize(_configuration);
-
-            //PrepaidVoucherServiceExceptionMock service = new PrepaidVoucherServiceExceptionMock();
             service.exceptionText = "A custom error occurred.  This is the error text.";
             PrepaidVoucherService.PrepaidVoucherResponse response = service.ConsumeVoucher(request);
-            Assert.AreEqual(ReturnCode.IbsCiSystemError, response.returnCode,
-                "Exception did not return expected error code.");
+            Assert.AreEqual(ReturnCode.IbsCiSystemError, response.returnCode, "Exception did not return expected error code.");
         }
 
         [Test]
         [Category("MockTests")]
         public void PP_01_Mock_AlreadyConsumedVoucher()
         {
-            PP_01_AlreadConsumed_Mock alreadConsumed_Mock = new PP_01_AlreadConsumed_Mock(_context);
+            PP_01_AlreadConsumed_Mock alreadConsumed_Mock = new PP_01_AlreadConsumed_Mock(_context, null);
 
             string response;
             alreadConsumed_Mock.GetResponse(out response);
@@ -146,9 +132,7 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher.Tests
         [Explicit]
         public void RealFTTest()
         {
-            XmlNode settings =
-                GetNode(
-                    "TestMessages/MessageGroup[@name='PrepaidVoucher']/Message[@name='RealFTTest']/MessageContent/CustomContent/Settings");
+            XmlNode settings =GetNode("TestMessages/MessageGroup[@name='PrepaidVoucher']/Message[@name='RealFTTest']/MessageContent/CustomContent/Settings");
             int customerId = Int32.Parse(XmlUtilities.SafeSelectText(settings, "CustomerId"));
             int financialAccountId = Int32.Parse(XmlUtilities.SafeSelectText(settings, "FinancialAccountId"));
             decimal baseAmount = Decimal.Parse(XmlUtilities.SafeSelectText(settings, "BaseAmount"));
@@ -172,6 +156,8 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher.Tests
             financeService.CreatePaymentTransactions(transactionsCollection, PaymentReceiptNumberingMethod.Automatic);
         }
 
+        #region Helper Methods
+
         private XmlNode GetNode(string path)
         {
             XmlDocument xmlDocument = new XmlDocument();
@@ -188,13 +174,27 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher.Tests
             return result;
         }
 
+        private WcfEndpoint CreateWcfEndpoint()
+        {
+            return new WcfEndpoint()
+            {
+                Name = "PrepaidVoucherInBound",
+                Address = string.Format("http://localhost:{0}/ibs.interprit.com/{1}", 8083, "PrepaidVoucherInBound"),
+                Binding = "basicHttpBinding",
+                Contract = "PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher",
+                BindingConfiguration = "nonCertBinding"
+            };
+        }
+
+        #endregion
+
         #region Helper Classes
 
         private class PP_01_Mock : PP_01_ConsumeVoucher
         {
             private Mockery m_mock = null;
 
-            public PP_01_Mock(IComponentInitContext context) : base(context)
+            public PP_01_Mock(IComponentInitContext context, ConsumeVoucherData data) : base(context, data)
             {
                 m_mock = new Mockery();
             }
@@ -234,6 +234,21 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher.Tests
                 return svcFinance;
             }
 
+            protected override void TraceInformation(string message)
+            {
+                return;
+            }
+
+            protected override void HandleWarning(string message, Exception innerException)
+            {
+                return;
+            }
+
+            protected override void HandleError(string message, Exception innerException)
+            {
+                return;
+            }
+
             public void VerifyExpectations()
             {
                 if (!(m_mock == null))
@@ -244,9 +259,11 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher.Tests
         private class PrepaidVoucherServiceMock : PrepaidVoucherService
         {
             private PP_01_Mock pp_01;
+            private Mockery m_mock = null;
 
             public PrepaidVoucherServiceMock(IComponentInitContext initContext) : base(initContext)
             {
+                m_mock = new Mockery();
             }
 
             protected override void WriteCommLogEntry(int customerId, long? historyId, string host, string messageString, CommunicationLogEntryMessageQualifier direction, string trackingId, string serialNumber)
@@ -254,10 +271,23 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher.Tests
                 //ignore commlog in unittest
             }
 
-            protected override PP_01_ConsumeVoucher GetVoucherCommand(List<Command> commands, IntegrationMailMessage mailMessage)
+            protected override PP_01_ConsumeVoucher CreateVoucherCommand(IComponentInitContext context, ConsumeVoucherData data)
             {
-                pp_01 = new PP_01_Mock(_context);
+                pp_01 = new PP_01_Mock(context, data);
                 return pp_01;
+            }
+
+            protected override IAuthenticationService GetAuthenticationService()
+            {
+                IAuthenticationService svcAuth = m_mock.NewMock<IAuthenticationService>();
+
+                var authResult = new AuthenticationResult() { Authenticated = true };
+                var authFailResult = new AuthenticationResult() { Authenticated = false };
+
+                Expect.Once.On(svcAuth).Method("AuthenticateByProof").WithAnyArguments().Will(Return.Value(authResult));
+                //Expect.Once.On(svcAuth).Method("AuthenticateByProof").With("Dsn", "UnitTest").Will(Return.Value(authFailResult));
+
+                return svcAuth;
             }
 
             public void VerifyExpectations()
@@ -276,7 +306,12 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher.Tests
             {
             }
 
-            protected override PP_01_ConsumeVoucher GetVoucherCommand(List<Command> commands, IntegrationMailMessage mailMessage)
+            protected override PP_01_ConsumeVoucher CreateVoucherCommand(IComponentInitContext context, ConsumeVoucherData data)
+            {
+                throw new Exception(exceptionText);
+            }
+
+            protected override IAuthenticationService GetAuthenticationService()
             {
                 throw new Exception(exceptionText);
             }
@@ -291,19 +326,36 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher.Tests
         private class PP_01_AlreadConsumed_Mock : PP_01_ConsumeVoucher
         {
             private Mockery m_mock = null;
+            private ConsumeVoucherData mock_data;
 
-            public PP_01_AlreadConsumed_Mock(IComponentInitContext context) : base(context)
+            public PP_01_AlreadConsumed_Mock(IComponentInitContext context, ConsumeVoucherData data) : base(context, data)
             {
                 m_mock = new Mockery();
+                mock_data = data;
             }
 
-            protected override void InitCommandParameters()
+            protected override void InitParameters(ConsumeVoucherData data)
             {
             }
 
             protected override string VmsConsumeVoucher()
             {
                 return "C";
+            }
+
+            protected override void TraceInformation(string message)
+            {
+                return;
+            }
+
+            protected override void HandleWarning(string message, Exception innerException)
+            {
+                return;
+            }
+
+            protected override void HandleError(string message, Exception innerException)
+            {
+                return;
             }
 
             public void VerifyExpectations()

@@ -6,13 +6,13 @@ using System.Diagnostics;
 using System.Linq;
 using PayMedia.ApplicationServices.Finance.ServiceContracts;
 using PayMedia.ApplicationServices.Finance.ServiceContracts.DataContracts;
+using PayMedia.Framework.Integration.Contracts;
 using PayMedia.Integration.FrameworkService.Interfaces.Common;
 using PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher.AscCashValid;
 
 namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
 {
-    [Serializable]
-    public class PP_01_ConsumeVoucher : Command
+    public class PP_01_ConsumeVoucher
     {
         #region private fields
 
@@ -22,17 +22,19 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
         private decimal _voucherAmount;
         private ConfigureSetting _setting;
         private IComponentInitContext _context;
+        private ConsumeVoucherData _data;
 
         #endregion
 
         #region Ctor
 
-        public PP_01_ConsumeVoucher(IComponentInitContext context)
+        public PP_01_ConsumeVoucher(IComponentInitContext context, ConsumeVoucherData data)
         {
             try
             {
                 _context = context;
                 _setting = new ConfigureSetting(context);
+                _data = data;
 
             }
             catch (Exception ex)
@@ -58,7 +60,7 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
 
             try
             {
-                InitCommandParameters();
+                InitParameters(_data);
             }
             catch (Exception ex)
             {
@@ -152,23 +154,11 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
 
         #region protected methods
 
-        protected virtual void InitCommandParameters()
+        protected virtual void InitParameters(ConsumeVoucherData data)
         {
-            XmlDocument docMsg = new XmlDocument();
-            docMsg.LoadXml(BaseMailMessage.XmlDoc);
-
-            // Get values from mail message
-            _customerId = BaseMailMessage.CustomerId;
-
-            string namespacePrefix = "p";
-
-            // Create namespace manager.
-            XmlNamespaceManager namespaceManager = new XmlNamespaceManager(docMsg.NameTable);
-            // Setting the prefix so there is no need to refer to the full namespace.
-            namespaceManager.AddNamespace(namespacePrefix, "http://www.ibsinterprit.com/integration/prepaidvoucher");
-
-            _financialAccountId = int.Parse(XmlUtilities.SafeSelectText(docMsg, "//p:FinancialAccountId", namespaceManager));
-            _voucherTicketNumber = long.Parse(XmlUtilities.SafeSelectText(docMsg, "//p:VoucherTicketNumber", namespaceManager));
+            _customerId = data.CustomerId;
+            _financialAccountId = data.FinancialAccountId;
+            _voucherTicketNumber = data.VoucherTicketNumber;
         }
 
         protected virtual string VmsConsumeVoucher()
@@ -216,30 +206,23 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
             return null;
         }
 
-        // This method is not used until it is clear if combination of 
-        // prepaidVoucherLedgerAccountID and prepaidVoucherCurrencyID should come from IBS ASM per DSN or IC Config.
-        protected static int GetPrepaidVoucherCurrencyID(int prepaidVoucherLedgerAccountID)
-        {
-            throw new NotImplementedException();
-        }
-
         protected virtual void TraceInformation(string message)
         {
-            Diagnostics.Info(string.Format("\r\n\r\n{0}Message Content: {1}", message, baseMailMessage.ToString()));
+            Diagnostics.Info(string.Format("\r\n\r\n{0}Consume Voucher Data: {1}", message, _data));
         }
 
         protected virtual void HandleWarning(string message, Exception innerException)
         {
             string tmpMessage = (innerException == null) ? message : new IntegrationException(message, innerException).ToString();
 
-            Diagnostics.Warning(string.Format("\r\n\r\n{0}Message Content: {1}", tmpMessage, baseMailMessage.ToString()));
+            Diagnostics.Warning(string.Format("\r\n\r\n{0}Consume Voucher Data: {1}", tmpMessage, _data));
         }
 
         protected virtual void HandleError(string message, Exception innerException)
         {
             string tmpMessage = (innerException == null) ? message : new IntegrationException(message, innerException).ToString();
 
-            Diagnostics.Error(string.Format("\r\n\r\n{0}Message Content: {1}", tmpMessage, baseMailMessage.ToString()));
+            Diagnostics.Error(string.Format("\r\n\r\n{0}Consume Voucher Data: {1}", tmpMessage, _data));
         }
 
         #endregion

@@ -8,22 +8,19 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
 {
     public abstract class WcfListenerBase : IListener
     {
-        protected ListenerConfiguration _configuration;
-        protected string _listenerName;
-
-        private WcfEndpoint endpoint;
-        private ServiceHost serviceHost;
+        protected WcfEndpoint wcfEndpoint;
+        protected string listenerName;
+        protected ServiceHost serviceHost;
 
         public string Name
         {
-            get { return _listenerName; }
+            get { return listenerName; }
         }
 
-        public virtual void Initialize(ListenerConfiguration configuration)
+        public virtual void Initialize(WcfEndpoint wcfEndpoint)
         {
-            this._configuration = configuration;
-            this.endpoint = (WcfEndpoint) configuration.Endpoint;
-            this._listenerName = endpoint.Name;
+            this.wcfEndpoint = wcfEndpoint;
+            this.listenerName = wcfEndpoint.Name;
         }
 
         ~WcfListenerBase()
@@ -38,11 +35,10 @@ namespace PayMedia.Integration.IFComponents.BBCL.PrepaidVoucher
 
         protected virtual void RequestStart(object contract)
         {
-
             // Start up the service host.
-            serviceHost = ServiceUtilities.CreateServiceHost(endpoint, contract);
+            serviceHost = ServiceUtilities.CreateServiceHost(wcfEndpoint, contract);
             serviceHost.Open();
-            Diagnostics.Info(string.Format("{0} host is starting up.", endpoint.Name));
+            Diagnostics.Info(string.Format("{0} host is starting up.", Name));
         }
 
         /// <summary>
